@@ -140,7 +140,7 @@
         document.addEventListener('keydown', keyDown);
         document.addEventListener('keyup', keyUp);
 
-        // Langkah 13: Fungsi untuk menangani sentuhan
+        // Langkah 13: Fungsi untuk menangani sentuhan (touchscreen)
         canvas.addEventListener('touchstart', handleTouch);
         canvas.addEventListener('touchmove', handleTouch);
         canvas.addEventListener('touchend', () => player.dx = 0);
@@ -155,6 +155,17 @@
                 player.dx = -player.speed;
             }
         }
+
+        // Langkah 14: Event listener untuk touchpad atau mouse movement
+        canvas.addEventListener('mousemove', (e) => {
+            const mouseX = e.clientX - canvas.offsetLeft;
+
+            if (mouseX > player.x + player.width / 2) {
+                player.dx = player.speed;
+            } else if (mouseX < player.x + player.width / 2) {
+                player.dx = -player.speed;
+            }
+        });
 
         // Jalankan game
         updateGame();
