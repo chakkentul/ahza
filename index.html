@@ -21,14 +21,16 @@
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <canvas id="gameCanvas"></canvas>
 
     <script>
-        // Langkah 1: Setup kanvas
+        // Setup kanvas agar sesuai layar handphone
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-        // Langkah 2: Ukuran pemain dan posisi awal
+        // Ukuran pemain dan posisi awal
         const player = {
             width: 50,
             height: 50,
@@ -38,57 +40,70 @@
             dx: 0
         };
 
-        // Langkah 3: Objek jatuh
-        const obstacle = {
-            width: 50,
-            height: 50,
-            x: Math.random() * (canvas.width - 50),
+        // Objek bulat berwarna kuning yang harus dikumpulkan
+        const object = {
+            radius: 25,
+            x: Math.random() * (canvas.width - 50) + 25,
             y: -50,
-            speed: 20
+            speed: 5
         };
 
+        let score = 0;
         let gameOver = false;
+        let timeLeft = 120; // waktu 2 menit
 
-        // Langkah 4: Fungsi untuk menggambar pemain
+        // Fungsi untuk menggambar pemain
         function drawPlayer() {
             ctx.fillStyle = 'black';
             ctx.fillRect(player.x, player.y, player.width, player.height);
         }
 
-        // Langkah 5: Fungsi untuk menggambar objek jatuh
-        function drawObstacle() {
-            ctx.fillStyle = '#898989';
-            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        // Fungsi untuk menggambar objek bulat berwarna kuning
+        function drawObject() {
+            ctx.beginPath();
+            ctx.arc(object.x, object.y, object.radius, 0, Math.PI * 2);
+            ctx.fillStyle = 'yellow';
+            ctx.fill();
+            ctx.closePath();
         }
 
-        // Langkah 6: Update posisi objek jatuh
-        function updateObstacle() {
-            obstacle.y += obstacle.speed;
+        // Update posisi objek bulat
+        function updateObject() {
+            object.y += object.speed;
 
-            if (obstacle.y > canvas.height) {
-                obstacle.y = -50;
-                obstacle.x = Math.random() * (canvas.width - 50);
+            if (object.y > canvas.height) {
+                object.y = -50;
+                object.x = Math.random() * (canvas.width - 50) + 25;
             }
         }
 
-        // Langkah 7: Deteksi tabrakan
+        // Deteksi tabrakan antara pemain dan objek bulat
         function detectCollision() {
-            if (player.x < obstacle.x + obstacle.width &&
-                player.x + player.width > obstacle.x &&
-                player.y < obstacle.y + obstacle.height &&
-                player.y + player.height > obstacle.y) {
+            const distX = Math.abs(player.x + player.width / 2 - object.x);
+            const distY = Math.abs(player.y + player.height / 2 - object.y);
+            const distance = Math.sqrt(distX * distX + distY * distY);
+
+            if (distance < player.width / 2 + object.radius) {
+                score++;
+                object.y = -50;
+                object.x = Math.random() * (canvas.width - 50) + 25;
+            }
+
+            if (score >= 10) {
                 gameOver = true;
+                drawWin();
             }
         }
 
-        // Langkah 8: Fungsi untuk menggambar teks Game Over
-        function drawGameOver() {
-            ctx.font = '50px Arial';
-            ctx.fillStyle = '#898989';
-            ctx.fillText('Game Over', canvas.width / 3, canvas.height / 2);
+        // Gambar poin dan waktu tersisa
+        function drawScoreAndTime() {
+            ctx.font = '20px Arial';
+            ctx.fillStyle = 'black';
+            ctx.fillText(`Poin: ${score}`, 10, 30);
+            ctx.fillText(`Waktu: ${timeLeft} detik`, 10, 60);
         }
 
-        // Langkah 9: Update posisi pemain
+        // Update posisi pemain
         function updatePlayerPosition() {
             player.x += player.dx;
 
@@ -97,31 +112,56 @@
             if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
         }
 
-        // Langkah 10: Fungsi utama untuk menjalankan game
+        // Fungsi untuk menggambar teks "Game Over"
+        function drawGameOver() {
+            ctx.font = '50px Arial';
+            ctx.fillStyle = '#898989';
+            ctx.fillText('Game Over', canvas.width / 3, canvas.height / 2);
+        }
+
+        // Fungsi untuk menggambar teks "You Win"
+        function drawWin() {
+            ctx.font = '50px Arial';
+            ctx.fillStyle = 'green';
+            ctx.fillText('You Win!', canvas.width / 3, canvas.height / 2);
+        }
+
+        // Fungsi utama untuk menjalankan game
         function updateGame() {
-            if (!gameOver) {
+            if (!gameOver && timeLeft > 0) {
                 // Bersihkan kanvas
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                // Gambar pemain dan objek jatuh
+                // Gambar pemain dan objek bulat
                 drawPlayer();
-                drawObstacle();
+                drawObject();
 
-                // Update posisi objek jatuh dan pemain
-                updateObstacle();
+                // Update posisi objek dan pemain
+                updateObject();
                 updatePlayerPosition();
 
                 // Deteksi tabrakan
                 detectCollision();
 
+                // Tampilkan poin dan waktu tersisa
+                drawScoreAndTime();
+
                 // Panggil fungsi ini lagi pada frame berikutnya
                 requestAnimationFrame(updateGame);
-            } else {
+            } else if (timeLeft <= 0) {
                 drawGameOver();
             }
         }
 
-        // Langkah 11: Fungsi untuk menangani kontrol keyboard
+        // Update waktu setiap detik
+        function updateTimer() {
+            if (!gameOver && timeLeft > 0) {
+                timeLeft--;
+                setTimeout(updateTimer, 1000);
+            }
+        }
+
+        // Fungsi untuk menangani kontrol keyboard
         function keyDown(e) {
             if (e.key === 'ArrowRight') {
                 player.dx = player.speed;
@@ -136,11 +176,22 @@
             }
         }
 
-        // Langkah 12: Event listener untuk keyboard
+        // Event listener untuk keyboard
         document.addEventListener('keydown', keyDown);
         document.addEventListener('keyup', keyUp);
 
-        // Langkah 13: Fungsi untuk menangani sentuhan (touchscreen)
+        // Event listener untuk touchpad atau mouse movement
+        canvas.addEventListener('mousemove', (e) => {
+            const mouseX = e.clientX - canvas.offsetLeft;
+
+            if (mouseX > player.x + player.width / 2) {
+                player.dx = player.speed;
+            } else if (mouseX < player.x + player.width / 2) {
+                player.dx = -player.speed;
+            }
+        });
+
+        // Event listener untuk touchscreen
         canvas.addEventListener('touchstart', handleTouch);
         canvas.addEventListener('touchmove', handleTouch);
         canvas.addEventListener('touchend', () => player.dx = 0);
@@ -156,19 +207,9 @@
             }
         }
 
-        // Langkah 14: Event listener untuk touchpad atau mouse movement
-        canvas.addEventListener('mousemove', (e) => {
-            const mouseX = e.clientX - canvas.offsetLeft;
-
-            if (mouseX > player.x + player.width / 2) {
-                player.dx = player.speed;
-            } else if (mouseX < player.x + player.width / 2) {
-                player.dx = -player.speed;
-            }
-        });
-
-        // Jalankan game
+        // Jalankan game dan timer
         updateGame();
+        updateTimer();
     </script>
 </body>
 </html>
