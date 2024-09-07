@@ -40,12 +40,21 @@
             dx: 0
         };
 
-        // Objek bulat berwarna kuning yang harus dikumpulkan
-        const object = {
+        // Objek bulat kuning yang harus dikumpulkan
+        const collectible = {
             radius: 25,
             x: Math.random() * (canvas.width - 50) + 25,
             y: -50,
             speed: 5
+        };
+
+        // Objek kotak abu-abu yang menyebabkan game over
+        const obstacle = {
+            width: 50,
+            height: 50,
+            x: Math.random() * (canvas.width - 50),
+            y: -50,
+            speed: 7
         };
 
         let score = 0;
@@ -58,40 +67,67 @@
             ctx.fillRect(player.x, player.y, player.width, player.height);
         }
 
-        // Fungsi untuk menggambar objek bulat berwarna kuning
-        function drawObject() {
+        // Fungsi untuk menggambar objek bulat kuning
+        function drawCollectible() {
             ctx.beginPath();
-            ctx.arc(object.x, object.y, object.radius, 0, Math.PI * 2);
+            ctx.arc(collectible.x, collectible.y, collectible.radius, 0, Math.PI * 2);
             ctx.fillStyle = 'yellow';
             ctx.fill();
             ctx.closePath();
         }
 
-        // Update posisi objek bulat
-        function updateObject() {
-            object.y += object.speed;
+        // Fungsi untuk menggambar objek kotak abu-abu
+        function drawObstacle() {
+            ctx.fillStyle = '#898989';
+            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        }
 
-            if (object.y > canvas.height) {
-                object.y = -50;
-                object.x = Math.random() * (canvas.width - 50) + 25;
+        // Update posisi objek bulat
+        function updateCollectible() {
+            collectible.y += collectible.speed;
+
+            if (collectible.y > canvas.height) {
+                collectible.y = -50;
+                collectible.x = Math.random() * (canvas.width - 50) + 25;
+            }
+        }
+
+        // Update posisi objek kotak
+        function updateObstacle() {
+            obstacle.y += obstacle.speed;
+
+            if (obstacle.y > canvas.height) {
+                obstacle.y = -50;
+                obstacle.x = Math.random() * (canvas.width - 50);
             }
         }
 
         // Deteksi tabrakan antara pemain dan objek bulat
-        function detectCollision() {
-            const distX = Math.abs(player.x + player.width / 2 - object.x);
-            const distY = Math.abs(player.y + player.height / 2 - object.y);
+        function detectCollectibleCollision() {
+            const distX = Math.abs(player.x + player.width / 2 - collectible.x);
+            const distY = Math.abs(player.y + player.height / 2 - collectible.y);
             const distance = Math.sqrt(distX * distX + distY * distY);
 
-            if (distance < player.width / 2 + object.radius) {
+            if (distance < player.width / 2 + collectible.radius) {
                 score++;
-                object.y = -50;
-                object.x = Math.random() * (canvas.width - 50) + 25;
+                collectible.y = -50;
+                collectible.x = Math.random() * (canvas.width - 50) + 25;
             }
 
             if (score >= 10) {
                 gameOver = true;
                 drawWin();
+            }
+        }
+
+        // Deteksi tabrakan dengan objek kotak (Game Over)
+        function detectObstacleCollision() {
+            if (player.x < obstacle.x + obstacle.width &&
+                player.x + player.width > obstacle.x &&
+                player.y < obstacle.y + obstacle.height &&
+                player.y + player.height > obstacle.y) {
+                gameOver = true;
+                drawGameOver();
             }
         }
 
@@ -132,16 +168,19 @@
                 // Bersihkan kanvas
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                // Gambar pemain dan objek bulat
+                // Gambar pemain, objek bulat, dan kotak
                 drawPlayer();
-                drawObject();
+                drawCollectible();
+                drawObstacle();
 
                 // Update posisi objek dan pemain
-                updateObject();
+                updateCollectible();
+                updateObstacle();
                 updatePlayerPosition();
 
                 // Deteksi tabrakan
-                detectCollision();
+                detectCollectibleCollision();
+                detectObstacleCollision();
 
                 // Tampilkan poin dan waktu tersisa
                 drawScoreAndTime();
