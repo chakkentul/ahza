@@ -140,6 +140,22 @@
         document.addEventListener('keydown', keyDown);
         document.addEventListener('keyup', keyUp);
 
+        // Langkah 13: Fungsi untuk menangani sentuhan
+        canvas.addEventListener('touchstart', handleTouch);
+        canvas.addEventListener('touchmove', handleTouch);
+        canvas.addEventListener('touchend', () => player.dx = 0);
+
+        function handleTouch(e) {
+            const touch = e.touches[0];
+            const touchX = touch.clientX - canvas.offsetLeft;
+
+            if (touchX > player.x + player.width / 2) {
+                player.dx = player.speed;
+            } else if (touchX < player.x + player.width / 2) {
+                player.dx = -player.speed;
+            }
+        }
+
         // Jalankan game
         updateGame();
     </script>
